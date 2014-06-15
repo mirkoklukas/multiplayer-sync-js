@@ -1,90 +1,178 @@
 // =============================================================================
-//  A reasonable extension in my opinion 
+//  A reasonable extensions 
 // =============================================================================
+// mathy version of a modulo operator
 if(!Number.prototype.mod) { 
     Number.prototype.mod = function (b) {
         return ((this % b) + b) % b;
     };
 };
 
+// according to MDN part of the Harmony (ECMAScript 6) proposal
+if (!Array.prototype.find) {
+  Object.defineProperty(Array.prototype, 'find', {
+    enumerable: false,
+    configurable: true,
+    writable: true,
+    value: function(predicate) {
+      if (this == null) {
+        throw new TypeError('Array.prototype.find called on null or undefined');
+      }
+      if (typeof predicate !== 'function') {
+        throw new TypeError('predicate must be a function');
+      }
+      var list = Object(this);
+      var length = list.length >>> 0;
+      var thisArg = arguments[1];
+      var value;
+
+      for (var i = 0; i < length; i++) {
+        if (i in list) {
+          value = list[i];
+          if (predicate.call(thisArg, value, i, list)) {
+            return value;
+          }
+        }
+      }
+      return undefined;
+    }
+  });
+};
+
+// according to MDN part of the Harmony (ECMAScript 6) proposal
+if (!Array.prototype.findIndex) {
+  Object.defineProperty(Array.prototype, 'findIndex', {
+    enumerable: false,
+    configurable: true,
+    writable: true,
+    value: function(predicate) {
+      if (this == null) {
+        throw new TypeError('Array.prototype.find called on null or undefined');
+      }
+      if (typeof predicate !== 'function') {
+        throw new TypeError('predicate must be a function');
+      }
+      var list = Object(this);
+      var length = list.length >>> 0;
+      var thisArg = arguments[1];
+      var value;
+
+      for (var i = 0; i < length; i++) {
+        if (i in list) {
+          value = list[i];
+          if (predicate.call(thisArg, value, i, list)) {
+            return i;
+          }
+        }
+      }
+      return -1;
+    }
+  });
+};
+
 // =============================================================================
 // 	Helper
 // =============================================================================
 var bind = function(that, f) {
-  return function() {
-    return f.apply(that, arguments);
-  }
+	return function() {
+    	return f.apply(that, arguments);
+  	}
 };
 
-// =============================================================================
-// 	
-// =============================================================================
-var Event = (function (defaultEffects) {
-	return function (type, id, virtual) {
-		this.type = type;
-		this.id = id;
-		this.virtual = virtual;
-		var effects = [];
-		this.execute = function (state, queue) {
-			console.log("Event <" + this.id + "> executed --> " + this.type);
-			effects.forEach(function (effect) {
-				effect(state, queue);
-			})
-		};
-		this.addEffect = function (effect) {
-			if (effect instanceof Function)
-				effects.push(bind(this, effect));
-			return this;
-		};
-		this.clearEffects = function () {
-			effects = [];
-			return this;
-		};
-	};
-}());
 
+
+// =============================================================================
+// 	Events and Cause-bubbles
+// =============================================================================
 
 var defaultEffects = {
-	"test": function (state, queue) {
+	test: function (state, queue) {
 		console.log("test effect");
 	}
 };
 
-var createEvent = (function (defaultEffects) {
-	var defaultEffects = defaultEffects,
-		cause = {};
-	return function (type, id, causeId) {
-		var virtual = false;
-		if (causeId !== undefined) {
-			cause[causeId] = (cause[causeId] || {})[id] = true;
-			virtual = true;
-		}
-		return new Event(type, id, virtual).addEffect(defaultEffects[type])
+var Event = (function (defaultEffects) {
+	var defaultEffects = defaultEffects || {};
+	return function (type, virtual) {
+			var effects = [],
+				removeCallbacks = [];
+			
+			this.type = type;
+			this.id = +(String(+new Date()) + Math.floor(Math.random()*1000));
+			this.virtual = virtual || false;
+			var attachedToCause = false;
+
+			
+			this.execute = function (state, queue) {
+				console.log("---> " + this.type + " <id:" + this.id + ">" );
+				effects.forEach(function (effect) {
+					effect(state, queue);
+				})
+			};
+			this.addEffect = function (effect) {
+				if (effect instanceof Function)
+					effects.push(bind(this, effect));
+				return this;
+			};
+			this.default = function () {
+				if(defaultEffects[this.type])
+					this.addEffect(defaultEffects[this.type]);
+				else
+					throw "No default effect for type " + this.type;
+			};
+			this.clearEffects = function () {
+				effects = [];
+				return this;
+			};
+			this.isSolid = function () {
+				return Boolean(causes[this.cause]);
+			};
+			this.addCause = function (cause) {
+				if (!attachedToCause)
+					cause.attachEvent(this);
+				else throw "Event already attached to another cause...";
+			};
+			this.onRemove = function (callback) {
+				removeCallbacks.push(callback);
+			}
+			this.remove = function () {
+				removeCallbacks.forEach(function (callbak) {
+					callback();
+				});
+			};
 	};
 }(defaultEffects));
 
+var Cause = function () {
+	var events = [];
+	this.attachEvent = function (e) {
+		events.push(e);
+		return this;
+	};
+	this.collapse = function () {
+		events.forEach(function (e) {
+			e.remove();
+		});
+		return this;
+	};
+};
 
-var explosionEvent = createEvent("explosion", 1).clearEffects().addEffect(function (state, queue) {
-
-	var now = Number(new Date()),
-		decendant = createEvent("evolve explosion", "" + this.id + "-descendant-" + 1, 1)
-						.clearEffects()
-						.addEffect(function (state, queue) {
-
-						});
-
-
-
-	queue.
-
-
-
-});
-
-
-
-
-
+var eventChain = function (timedEvents) {
+	var origin = timedEvents.shift(),
+		next,
+		prev = origin;
+	while (timedEvents.length > 0) { 
+		next = timedEvents.shift();
+		prev[1].addEffect(function (state, queue) {
+			queue.push(next[1], next[0]);
+		});
+		prev[1].onRemove(function () {
+			next[1].remove();
+		});
+		prev = next; 
+	};
+	return origin;
+};
 
 // =============================================================================
 //   
@@ -95,13 +183,26 @@ var EventQueue = function () {
 
 EventQueue.prototype.push = function (e, now) {
 	var now = now || Number(new Date()),
-		i = 0;
+		i = 0,
+		timedEventTupel = [now, e]
+
+	// make e removable from queue
+	e.onRemove(bind(this, function () {
+		var i = this.events.findIndex(function (tupel) {
+			return tupel[1] === timedEventTupel[1];
+		});
+
+		this.events.splice(i,1);
+		return e;
+	}));
 
 	//  push and keep ordered by time...
-	events.push([now, e]);
-	events.sort(function (a, b) {
+	this.events.push(timedEventTupel);
+	this.events.sort(function (a, b) {
 		return a[0] - b[0];
 	});
+
+	return this;
 };
 
 EventQueue.prototype.shift = function (delta) {
@@ -111,12 +212,19 @@ EventQueue.prototype.shift = function (delta) {
 
 	//  note that we assume that the queue is ordered by
 	//  time...
-	if (events[0][0].mod(delta) <= now.mod(delta))
+	if (Math.floor(events[0][0]/delta) <= Math.floor(now/delta))
 		return events.shift()[1];
 	else 
 		return undefined;
 };
 
+EventQueue.remove = function (e) {
+	var i = this.events.findIndex(function (tupel) {
+		return tupel[1] === e;
+	});
+
+	this.events.splice(i,1);
+};
 // ==================================================
 //  
 // ==================================================
@@ -131,6 +239,48 @@ EventQueue.prototype.shift = function (delta) {
 // ==================================================
 //  
 // ==================================================
+
+var c;
+
+var createFlyingParticle = function (e) {
+	return new Event("Create particle").addEffect(function (state, queue) {
+		
+	});
+};
+
+var createDeadzone = function (e) {
+	return new Event("DeadZone").addEffect(function (state, queue) {
+		var e = createFlyingParticle(),
+			cause = new Cause().attachEvent(e);
+
+
+		queue.push(e);
+	});
+};
+
+var createExplosion = function (e) {
+	return new Event("Explosion").addEffect(function (state, queue) {
+		var e = createFlyingParticle(),
+			cause = new Cause().attachEvent(e);
+
+
+		queue.push(e);
+	});
+};
+
+var bombPlaced = new Event("Bomb placed", false).addEffect(function (state, queue) {
+
+	var e = createExplosion(),
+		cause = new Cause().attachEvent(e);
+		c = cause;
+	queue.push(e, +new Date() + 2000);
+});
+
+var q = new EventQueue();
+
+q.push(bombPlaced, +new Date() - 5000);
+
+q.shift().execute({},q);
 
 
 
