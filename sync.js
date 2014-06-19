@@ -79,30 +79,35 @@ var bind = function(that, f) {
   	}
 };
 
-
-
 // =============================================================================
 // 	Events and Cause-bubbles
 // =============================================================================
-
 var defaultEffects = {
 	test: function (state, queue) {
 		console.log("test effect");
 	}
 };
 
+var add = function (delta) {
+	return function (t) {
+		return t + delta;
+	}
+};
+
 var Event = (function (defaultEffects) {
 	var defaultEffects = defaultEffects || {};
-	return function (type, virtual) {
+	return function (config) {
 			var effects = [],
 				removeCallbacks = [];
 			
-			this.type = type;
-			this.id = +(String(+new Date()) + Math.floor(Math.random()*1000));
-			this.virtual = virtual || false;
+			var config = config || {}; 
+			this.type = config.type || "none";
+			this.id = config.id || (+(String(+new Date()) + Math.floor(Math.random()*1000)));
+			this.virtual = config.virtual || false;
+			this.approved = config.approved || false;
+
 			var attachedToCause = false;
 
-			
 			this.execute = function (state, queue) {
 				console.log("---> " + this.type + " <id:" + this.id + ">" );
 				effects.forEach(function (effect) {
@@ -115,7 +120,7 @@ var Event = (function (defaultEffects) {
 				return this;
 			};
 			this.default = function () {
-				if(defaultEffects[this.type])
+				if(defaultEffects[this.type] !== undefined)
 					this.addEffect(defaultEffects[this.type]);
 				else
 					throw "No default effect for type " + this.type;
@@ -139,6 +144,15 @@ var Event = (function (defaultEffects) {
 				removeCallbacks.forEach(function (callbak) {
 					callback();
 				});
+			};
+			this.chain = function (next, delta) {
+				this.addEffect(function (state, queue) {
+					queue.push(next, add(delta) )
+				});
+				this.onRemove(function () {
+					next.remove();
+				});
+				return next;
 			};
 	};
 }(defaultEffects));
@@ -164,25 +178,36 @@ var eventChain = function (timedEvents) {
 	while (timedEvents.length > 0) { 
 		next = timedEvents.shift();
 		prev[1].addEffect(function (state, queue) {
-			queue.push(next[1], next[0]);
+			queue.push(next[1], add(next[0]));
 		});
 		prev[1].onRemove(function () {
 			next[1].remove();
 		});
 		prev = next; 
 	};
-	return origin;
+	return origin[1];
 };
 
 // =============================================================================
 //   
 // =============================================================================
 var EventQueue = function () { 
+	this.delta = 1;
 	this.events = [];
+	this.history = [];
+};
+
+EventQueue.prototype.time = function () {
+	return +new Date();
+};
+
+EventQueue.prototype.setTime = function (f) {
+	this.time = f;
+	return this;
 };
 
 EventQueue.prototype.push = function (e, now) {
-	var now = now || Number(new Date()),
+	var now = now || (now instanceof Function) ? now(this.time()) : this.time();
 		i = 0,
 		timedEventTupel = [now, e]
 
@@ -205,17 +230,23 @@ EventQueue.prototype.push = function (e, now) {
 	return this;
 };
 
-EventQueue.prototype.shift = function (delta) {
+EventQueue.prototype.shift = function (delta, time) {
 	var events = this.events,
-		now = +new Date(),
+		now = time || this.time(),
 		delta = delta || 1;
+
+		if (!this.events.length >0) return undefined
 
 	//  note that we assume that the queue is ordered by
 	//  time...
-	if (Math.floor(events[0][0]/delta) <= Math.floor(now/delta))
-		return events.shift()[1];
-	else 
+	if (Math.floor(events[0][0]/delta) <= Math.floor(now/delta)) {
+		te = events.shift();
+		this.history.push(te);
+		return te[1];
+	}
+	else {  
 		return undefined;
+	}
 };
 
 EventQueue.remove = function (e) {
@@ -226,61 +257,76 @@ EventQueue.remove = function (e) {
 	this.events.splice(i,1);
 };
 // ==================================================
-//  
+//  Server
 // ==================================================
 
+var GameClient = function () {
+	var t_sync = 0,
+		localEvents = [],
+		state = {},
+		localState = {};
 
-
-
-// ==================================================
-//  
-// ==================================================
-
-// ==================================================
-//  
-// ==================================================
-
-var c;
-
-var createFlyingParticle = function (e) {
-	return new Event("Create particle").addEffect(function (state, queue) {
+	// update the local event list, i.e. update the events corresponding
+	// to the approved ones in the package
+	this.updateLocalEvents = function (pkg) {
 		
-	});
+		// filter those events that have been send to the server
+		// and whose approved versions just returned with the package
+		// -- admittedly this implementation looks kinda slow :)
+		var ids = pkg.map(function (timedEvent) {
+			return timedEvent[1].id;
+		});
+
+		localEvents = localEvents.filter(function (timedEvent) {
+			var id = timedEvent[1].id;
+			return ids.indexOf(id) === -1; 
+		});
+
+		// update the local event list with their respective delta
+		// and restore the order
+		pkg.forEach(function (pkgEvent) {
+			var t = pkgEvent[0],
+				e = pkgEvent[1],
+				delta = t - t_sync;
+			localEvents.push([delta, new Event(e)]);
+		});
+		localEvents.sort(function (a, b) {
+			return a[0] - b[0];
+		});
+	};
+
+	// update the local state, i.e. if there is an approved event
+	// at the beginning of the event list throw it at the world state
+	var isNotApproved = function (timedEvent) {
+		return timedEvent[1].approved !== true;
+	};
+
+	this.updateState = function () {
+
+		var i = localEvents.findIndex(isNotApproved),
+			approvedEvents = localEvents.splice(0,i - 1);
+
+		// First update the synchronized state
+		// consume clean approved events to compute new state and t_sync
+		approvedEvents.forEach(function (timedEvent) {
+			var delta = timedEvent[0],
+				e = timedEvent[1];
+
+			e.execute(state, );
+		});
+	};
+
+
+	this.onPkgReceived = function (pkg) {
+		this.updateLocalEvents(pkg);
+		this.updateLocalState();
+	};
 };
 
-var createDeadzone = function (e) {
-	return new Event("DeadZone").addEffect(function (state, queue) {
-		var e = createFlyingParticle(),
-			cause = new Cause().attachEvent(e);
 
 
-		queue.push(e);
-	});
-};
-
-var createExplosion = function (e) {
-	return new Event("Explosion").addEffect(function (state, queue) {
-		var e = createFlyingParticle(),
-			cause = new Cause().attachEvent(e);
-
-
-		queue.push(e);
-	});
-};
-
-var bombPlaced = new Event("Bomb placed", false).addEffect(function (state, queue) {
-
-	var e = createExplosion(),
-		cause = new Cause().attachEvent(e);
-		c = cause;
-	queue.push(e, +new Date() + 2000);
-});
-
-var q = new EventQueue();
-
-q.push(bombPlaced, +new Date() - 5000);
-
-q.shift().execute({},q);
-
+// ==================================================
+//  
+// ==================================================
 
 
