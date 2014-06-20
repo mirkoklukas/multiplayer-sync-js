@@ -260,6 +260,17 @@ EventQueue.remove = function (e) {
 //  Server
 // ==================================================
 
+
+var update = function (obj, changes) {
+	for (key in change) {
+		if (typeof obj[key] !== "object")
+			obj[key] = changes[key]
+		else
+			update(obj[key], changes[key]);
+	}
+};
+
+
 var GameClient = function () {
 	var t_sync = 0,
 		localEvents = [],
@@ -319,7 +330,7 @@ var GameClient = function () {
 
 	this.onPkgReceived = function (pkg) {
 		this.updateLocalEvents(pkg);
-		this.updateLocalState();
+		this.updateState(pkg);
 	};
 };
 
