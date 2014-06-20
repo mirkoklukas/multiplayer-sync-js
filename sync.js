@@ -257,8 +257,17 @@ EventQueue.remove = function (e) {
 	this.events.splice(i,1);
 };
 // ==================================================
-//  Server
+//  
 // ==================================================
+
+
+
+// ==================================================
+//  
+// ==================================================
+var deepCopy = function (obj) {
+
+};
 
 var GameClient = function () {
 	var t_sync = 0,
@@ -269,29 +278,11 @@ var GameClient = function () {
 	// update the local event list, i.e. update the events corresponding
 	// to the approved ones in the package
 	this.updateLocalEvents = function (pkg) {
-		
-		// filter those events that have been send to the server
-		// and whose approved versions just returned with the package
-		// -- admittedly this implementation looks kinda slow :)
-		var ids = pkg.map(function (timedEvent) {
-			return timedEvent[1].id;
-		});
+		var ids = pkg.processedIds;
 
 		localEvents = localEvents.filter(function (timedEvent) {
 			var id = timedEvent[1].id;
 			return ids.indexOf(id) === -1; 
-		});
-
-		// update the local event list with their respective delta
-		// and restore the order
-		pkg.forEach(function (pkgEvent) {
-			var t = pkgEvent[0],
-				e = pkgEvent[1],
-				delta = t - t_sync;
-			localEvents.push([delta, new Event(e)]);
-		});
-		localEvents.sort(function (a, b) {
-			return a[0] - b[0];
 		});
 	};
 
@@ -301,25 +292,28 @@ var GameClient = function () {
 		return timedEvent[1].approved !== true;
 	};
 
-	this.updateState = function () {
-
-		var i = localEvents.findIndex(isNotApproved),
-			approvedEvents = localEvents.splice(0,i - 1);
-
-		// First update the synchronized state
-		// consume clean approved events to compute new state and t_sync
-		approvedEvents.forEach(function (timedEvent) {
-			var delta = timedEvent[0],
-				e = timedEvent[1];
-
-			e.execute(state, );
-		});
+	this.updateState = function (pkg) {
+		t_sync = pkg.time;
+		state = new World(pkg.state);
 	};
 
 
 	this.onPkgReceived = function (pkg) {
 		this.updateLocalEvents(pkg);
-		this.updateLocalState();
+		this.updateLocalState(pkg);
+	};
+
+	this.computeLocalState = function () {
+		var events = localEvents.slice(),
+			te = events.shift(),
+			t = te[0],
+			e = te[1];
+		while (e && t <= now()) {
+			
+			te = events.shift(),
+			t = te[0],
+			e = te[1];
+		}
 	};
 };
 
