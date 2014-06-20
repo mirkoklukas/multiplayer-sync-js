@@ -265,8 +265,13 @@ EventQueue.remove = function (e) {
 // ==================================================
 //  
 // ==================================================
-var deepCopy = function (obj) {
-
+var update = function (obj, changes) {
+	for (key in changes) {
+		if (typeof obj[key] !== "object") 
+			obj[key] = changes[key]
+		else 
+			update(obj[key], changes[key]);
+	}
 };
 
 var GameClient = function () {
@@ -293,8 +298,11 @@ var GameClient = function () {
 	};
 
 	this.updateState = function (pkg) {
-		t_sync = pkg.time;
-		state = new World(pkg.state);
+		var diff = pkg.diff,
+			t = pkg.time;
+
+		t_sync = t;
+		update(state, diff);
 	};
 
 
