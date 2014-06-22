@@ -112,7 +112,8 @@ var Event = (function (defaultEffects) {
 				console.log("---> " + this.type + " <id:" + this.id + ">" );
 				effects.forEach(function (effect) {
 					effect(state, queue);
-				})
+				});
+				return state;
 			};
 			this.addEffect = function (effect) {
 				if (effect instanceof Function)
@@ -262,7 +263,7 @@ EventQueue.remove = function (e) {
 
 
 var update = function (obj, changes) {
-	for (key in change) {
+	for (key in changes) {
 		if (typeof obj[key] !== "object")
 			obj[key] = changes[key]
 		else
@@ -272,11 +273,17 @@ var update = function (obj, changes) {
 
 
 var GameClient = function () {
-	var t_sync = 0,
-		localEvents = [],
+	var t_sync  = 0,
+		localEvents  = [],
 		state = {},
 		localState = {};
 
+	this.setLocalEvents = function (events) {
+		localEvents = events;
+	};
+	this.getLocalEvents = function () {
+		return localEvents ;
+	};
 	// update the local event list, i.e. update the events corresponding
 	// to the approved ones in the package
 	this.updateLocalEvents = function (pkg) {
@@ -288,18 +295,29 @@ var GameClient = function () {
 			return timedEvent[1].id;
 		});
 
-		localEvents = localEvents.filter(function (timedEvent) {
-			var id = timedEvent[1].id;
-			return ids.indexOf(id) === -1; 
-		});
+		// localEvents = localEvents.filter(function (timedEvent) {
+		// 	var id = timedEvent[1].id;
+		// 	return ids.indexOf(id) === -1; 
+		// });
 
-		// update the local event list with their respective delta
-		// and restore the order
+		// update the local event list with their respective delta to 
+		// the current sync time and restore the order
 		pkg.forEach(function (pkgEvent) {
-			var t = pkgEvent[0],
+			var t = pkgEvent[0] + t_sync,
 				e = pkgEvent[1],
-				delta = t - t_sync;
-			localEvents.push([delta, new Event(e)]);
+				id = e.id,
+				local = localEvents.find(function (x) {
+					return x[1].id === id;
+				});
+
+
+			if (local) {
+				update(local, [t,e]);
+			} else {
+				localEvents.push([t,e]);
+			}
+			// local[0] = delta;
+			// localEvents.push([delta, new Event(e)]);
 		});
 		localEvents.sort(function (a, b) {
 			return a[0] - b[0];
@@ -315,7 +333,9 @@ var GameClient = function () {
 	this.updateState = function () {
 
 		var i = localEvents.findIndex(isNotApproved),
-			approvedEvents = localEvents.splice(0,i - 1);
+			approvedEvents = localEvents.slice(0,i);
+
+		localEvents = localEvents.slice(i)
 
 		// First update the synchronized state
 		// consume clean approved events to compute new state and t_sync
@@ -323,7 +343,6 @@ var GameClient = function () {
 			var delta = timedEvent[0],
 				e = timedEvent[1];
 
-			e.execute(state, );
 		});
 	};
 
@@ -332,6 +351,8 @@ var GameClient = function () {
 		this.updateLocalEvents(pkg);
 		this.updateState(pkg);
 	};
+
+
 };
 
 
@@ -339,5 +360,26 @@ var GameClient = function () {
 // ==================================================
 //  
 // ==================================================
+
+var gc = new GameClient();
+var localEvents = [
+	[10, {id: 0, data: 1}],
+	[25, {id: 1, data: 2}],
+	[15, {id: 2, data: 3}]
+];
+var pkg = [
+	[14, {id: 0, data: 10, approved: true}],
+	[11, {id: 10, data: 99, approved: true}]
+];
+
+gc.setLocalEvents(localEvents);
+
+var log = function (x) { console.log(JSON.stringify(x))}
+log(gc.getLocalEvents())
+
+gc.onPkgReceived(pkg)
+log(gc.getLocalEvents())
+
+
 
 
