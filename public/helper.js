@@ -86,5 +86,6 @@ var update = function (obj, changes) {
 		else
 			update(obj[key], changes[key]);
 	}
+  return obj;
 };
 

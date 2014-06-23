@@ -1,32 +1,12 @@
 var express = require('express'), 
-	app = express(), 
-	port = process.env.PORT || 3000,
-	server = app.listen(port),
-	io = require('socket.io').listen(server);
+	app = express(),
+	server = require('http').Server(app), 
+	io = require('socket.io')(server),
+	port = process.env.PORT || 3000;
 
-
-var Event = (function (defaultEffects) {
-	var defaultEffects = defaultEffects;
-
-	return function (type, id, virtual) {
-		this.type = type;
-		this.id = id;
-		this.virtual = virtual;
-		var effects = [defaultEffects[this.type]] || [];
-		this.execute = function (state, queue) {
-			effects.forEach(function (effect) {
-				effect(state, queue)
-			})
-		};
-
-	};
-
-}({
-	"none": function (state, queue) {
-		console.log("test log");
-	}
-}));
-
+server.listen(port, function() {
+    	console.log('The magic happens at: localhost:%d', server.address().port);
+	});
 
 app.use(express.static(__dirname + '/public'));
 
@@ -34,29 +14,29 @@ app.get('/', function(req, res){
 	res.sendfile("./public/index.html");
 });
 
+var defaultEffects = {
+	test: function (state, queue) {
+		console.log("test effect");
+	}
+};
 
-var e = new Event("none", 0, false);
+var effects = {
+	moveRight: function (state) {
+		state.entityDict[this.entityId].position[0] += 10;
+	},
+	moveLeft: function (state) {
+		state.entityDict[this.entityId].position[0] -= 10;
+	},
+	test: function (state) {
+		console.log("test effect");
+	}
+};
 
-io.sockets.on('connection', function (socket) {
+
+// var Event = require("./sync.js").EventFactory(defaultEffects);
 
 
-
-		socket.emit("welcome", {
-			"msg": "You're connected with socket-id:  " + socket.id,
-			"id": socket.id,
-			"event": e
-		});
+var GameServer = require("./game-server.js");
+var gameServer = new GameServer(io, effects);
 
 
-		socket.on('disconnect', function () {
-			console.log('Disconnect: ' + socket.id);
-			socket.broadcast.emit('player left', { 
-				msg: socket.id + " left..."
-			});
-	    });
-
-	    // ----------
-		// 
-		// ----------
-
-	});

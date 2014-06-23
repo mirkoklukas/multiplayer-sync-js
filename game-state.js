@@ -37,4 +37,4 @@ GameState.prototype.updateEntity = function (entity) {
 	return this;
 };
 
-exports.GameState = GameState;
+module.exports = GameState;

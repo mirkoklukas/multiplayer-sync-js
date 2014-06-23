@@ -238,8 +238,7 @@ Server.prototype.processInputs = function() {
       this.last_processed_input[id] = message.input_sequence_number;
     }
   }
-}
-
+};
 
 // Send the world state to all the connected clients.
 Server.prototype.sendWorldState = function() {
