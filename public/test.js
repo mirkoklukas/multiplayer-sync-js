@@ -27,7 +27,6 @@ var gameClient = new GameClient(io, effects, keyboard);
 var infinity = new AnimationFrameLoop(function () {
 	stage.clear();
 	gameClient.processServerPkgs();
-
 	gameClient.state.entities.forEach(function (entity) {
 		renderer.drawEntity(entity);
 	});

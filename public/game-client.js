@@ -50,31 +50,32 @@ GameClient.prototype.initialze = function () {
     });
     // =======================================================
 
-    this.eventSource.on("mouseup", bind(this, function (e) {
+    this.eventSource.on("mouseup", bind(this, function (data) {
         socket.emit("click", {
             msg: "Client " + this.id +  " clicked",
-            event: update(e, {type: "click"})
+            event: update(data, {type: "click"})
         });  
     }));
 
-    this.eventSource.onAny(bind(this, function (type, e) {
-        console.log("Event:", type, e)
-        this.fireEvent(type, e);
+    this.eventSource.onAny(bind(this, function (type, data) {
+        console.log("Event:", type, data)
+        this.fireEvent(type, data);
     }));
 };
 
-GameClient.prototype.fireEvent = function (type, e) {
-    console.log("GameClient.fireEvent():", type, e)
+GameClient.prototype.fireEvent = function (type, data) {
+    console.log("GameClient.fireEvent():", type, data)
+    // Extend the `data` object with everything needed to synchronize, and
+    // create an "event-like" object `e`.
     this.lastSequenceNumber += 1;
-    var event = update(e, {
-        type: e.keyLabel || "NONE",
-        id: this.id + "<seperator>" + this.lastSequenceNumber,
+    var e = update(data, {
+        type: type,
         sequenceNumber: this.lastSequenceNumber,
         entityId: this.id
     });
-    this.eventQueue.push(event);
+    this.eventQueue.push(e);
     this.socket.emit("client event", {
-        "event": event
+        "event": e
     });
 
     if (!this.effects[e.type]) console.log("GameClient.processEvents(): Unknown effect...");

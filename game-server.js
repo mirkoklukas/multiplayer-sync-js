@@ -111,17 +111,14 @@ GameServer.prototype.processEvents = function () {
 	while(true) {
 		var e = this.eventQueue.shift();
 		if(!e) break;
-		console.log(this.state.entities[0])
+
 		if (this.validateEvent(e)) {
 			var effect = this.effects[e.type];
 			
 			if (effect) { 
-				console.log("effect call")
 				effect.call(e, this.state);
-				console.log(this.state.entities[0])
 			} else { 
 				console.log("Undefined effect... ", e.type);
-				console.log(this.state.entities[0])
 			}
 
 			this.lastSequenceNumber[e.clientId] = e.sequenceNumber;
