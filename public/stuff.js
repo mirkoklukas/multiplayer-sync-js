@@ -1,6 +1,21 @@
 // =============================================================================
 //  Some stuff.
 // =============================================================================
+var AnimationFrameLoop = function (update) {
+	var requestAnimationFrame = window.requestAnimationFrame || 
+								window.mozRequestAnimationFrame ||
+                              	window.webkitRequestAnimationFrame || 
+                              	window.msRequestAnimationFrame;
+
+	requestAnimationFrame(function tick() {
+		update();
+		requestAnimationFrame(tick);
+	});
+};
+
+// =============================================================================
+//  
+// =============================================================================
 var makeObservable = function (obj) {
 	var callbacks =  {};
 
@@ -226,31 +241,83 @@ var Stage = function (containerId) {
 	};
 
 };
-
 // =============================================================================
 //  
 // =============================================================================
-var AnimationFrameLoop = function (update) {
-	var requestAnimationFrame = window.requestAnimationFrame || 
-								window.mozRequestAnimationFrame ||
-                              	window.webkitRequestAnimationFrame || 
-                              	window.msRequestAnimationFrame;
+var Camera = function (config, stage) {
+	console.log("New Camera...")
+	var position = config.position;
+	var viewport = config.viewport;
+	var scale = Math.abs(stage.width/(viewport.upperright[0] - viewport.lowerleft[0]));
 
-	requestAnimationFrame(function tick() {
-		update();
-		requestAnimationFrame(tick);
-	});
+	this.toCanvas = function (worldPos) {
+		var y = stage.height - scale*(worldPos[0] - position[0]),
+			x = scale*(worldPos[1] - position[1]);
+		return [x,y];
+	};
+	this.toWorld = function (canvasPos) {
+		var y = ((stage.height - canvasPos[1])/scale) + position[0];
+			x = (canvasPos[0]/scale) + position[1];
+		return [y, x];
+	};
+	this.inViewport = function (obj) {
+		// ...		
+	};
+};
+// =============================================================================
+//  
+// =============================================================================
+var Renderer = function (stage, camera) {
+	console.log("New Renderer...")
+	var stage = stage;
+	var camera = camera;
+	var toCanvas = camera.toCanvas;
+
+	this.clear = function () {
+		stage.clear();
+	};
+	this.drawEntity = function (entity) {
+		var position = toCanvas(entity.position),
+			size = entity.size,
+			color = entity.color;
+		if(!(position || size || color)) 
+			throw entity + " is missing one of the following props: pos, size, color.";
+		stage.rect(position, size, color);
+	};
+
+	this.drawSegment = function (seg) {
+		stage.line(toCanvas(seg[0].position), toCanvas(seg[1].position), "#000");
+	};
+	this.drawNode = function (position, size, color) {
+		var p = toCanvas(position)
+		stage.rect([p[0] - size[0]/2, p[1]-size[1]/2], size, color) ;
+	};
+	this.drawPath = function (path) {
+		var path = path.slice(),
+			prev = path.shift(),
+			that = this;
+
+		this.drawNode(prev, [4,4], "rgb(255,0,0)");
+		path.forEach(function (vertex) {
+			stage.line(toCanvas(prev), toCanvas(vertex), "rgb(255,0,0)");
+			that.drawNode(vertex, [4,4], "rgb(255,0,0)");
+			prev = vertex;
+		});
+	};
 };
 
 // =============================================================================
 //  
 // =============================================================================
+// 
 // =============================================================================
 //  
 // =============================================================================
+// 
 // =============================================================================
 //  
 // =============================================================================
+// 
 // =============================================================================
 //  
 // =============================================================================

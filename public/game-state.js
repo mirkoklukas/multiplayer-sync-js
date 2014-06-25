@@ -8,7 +8,7 @@ var GameState = function () {
 
 GameState.prototype.addEntity = function (entity) {
 	// TO DO: Check if id is already taken
-	var id = entity.id || +(String(+new Date()) + Math.floor(Math.random()*1000));
+	var id = entity.id;
 	this.entityDict[id] = entity;
 	this.entities.push(entity);
 	return id;
@@ -29,7 +29,7 @@ GameState.prototype.updateEntity = function (entity) {
 	// NOTE: update() is defined in helper.js
 	// One could also remove old entity entry and replace by the new one.
 	// The current implementation also works if we hand in an update object...
-	var id = entitiy.id;
+	var id = entity.id;
 	if (!this.entityDict[id]) 
 		this.addEntity(entity);
 	else 

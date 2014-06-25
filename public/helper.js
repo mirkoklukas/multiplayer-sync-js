@@ -1,5 +1,5 @@
 // =============================================================================
-//  A reasonable extensions 
+//  Reasonable extensions (in my opinion).
 // =============================================================================
 // mathy version of a modulo operator
 if(!Number.prototype.mod) { 
@@ -8,7 +8,7 @@ if(!Number.prototype.mod) {
     };
 };
 
-// according to MDN part of the Harmony (ECMAScript 6) proposal
+// According to MDN part of the Harmony (ECMAScript 6) proposal.
 if (!Array.prototype.find) {
   Object.defineProperty(Array.prototype, 'find', {
     enumerable: false,
@@ -39,7 +39,7 @@ if (!Array.prototype.find) {
   });
 };
 
-// according to MDN part of the Harmony (ECMAScript 6) proposal
+// According to MDN part of the Harmony (ECMAScript 6) proposal.
 if (!Array.prototype.findIndex) {
   Object.defineProperty(Array.prototype, 'findIndex', {
     enumerable: false,

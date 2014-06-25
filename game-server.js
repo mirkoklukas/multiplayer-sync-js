@@ -17,6 +17,16 @@ var update = function (obj, changes) {
   return obj;
 };
 
+// =============================================================================
+//  
+// =============================================================================
+var Entity = function (type, id, position, size, color) {
+	this.type = type;
+	this.id = id;
+	this.position = position || [Math.random()*100, Math.random()*100];
+	this.size = size || [10, 10];
+	this.color = color || "#000";
+};
 
 // =============================================================================
 //  The Game Server.
@@ -25,15 +35,11 @@ var update = function (obj, changes) {
 var GameState = require("./game-state.js")
 
 var GameServer = function (io, effects) {
-	// Connected clients and their entities.
 	this.state = new GameState();
 	this.t_sync = 0;
 	this.effects = effects;
-
-	// List of processed events for each client.
 	this.lastSequenceNumber = {}
 	this.eventQueue = [];
-
 	this.io = io;
 	this.initialize();
 };
@@ -45,10 +51,13 @@ GameServer.prototype.initialize = function () {
 	io.sockets.on('connection', function (socket) {
 
 		// A new client (player) joined.
+		// Tell him his socket.id and create an avatar.
 		socket.emit("welcome", {
 			"msg": "You're connected... " + socket.id,
 			"id": socket.id
 		});
+		that.state.addEntity(new Entity("avatar", socket.id));
+
 
 		// Tell all others about the new player in town.
 		socket.broadcast.emit('new player', { 
@@ -58,6 +67,7 @@ GameServer.prototype.initialize = function () {
 
 		// Something happend at the other side of the tube.
 		socket.on('client event', function (data) {
+			console.log("Client event received", data.event);
 			var e = data.event;
 			update(e, { 
 				clientId: socket.id
@@ -101,12 +111,22 @@ GameServer.prototype.processEvents = function () {
 	while(true) {
 		var e = this.eventQueue.shift();
 		if(!e) break;
-
+		console.log(this.state.entities[0])
 		if (this.validateEvent(e)) {
-			this.effects[e.type].call(e, this.state);
+			var effect = this.effects[e.type];
+			
+			if (effect) { 
+				console.log("effect call")
+				effect.call(e, this.state);
+				console.log(this.state.entities[0])
+			} else { 
+				console.log("Undefined effect... ", e.type);
+				console.log(this.state.entities[0])
+			}
+
 			this.lastSequenceNumber[e.clientId] = e.sequenceNumber;
 		} else {
-			throw "GameServer.processEvents(...): This Event doesn't seem to make sense.... ?!"
+			console.log("GameServer.processEvents(...): This Event doesn't seem to make sense.... ?!");
 		}
 	}
 };

@@ -1,3 +1,4 @@
+// Set everything up.
 var express = require('express'), 
 	app = express(),
 	server = require('http').Server(app), 
@@ -14,29 +15,26 @@ app.get('/', function(req, res){
 	res.sendfile("./public/index.html");
 });
 
-var defaultEffects = {
-	test: function (state, queue) {
-		console.log("test effect");
-	}
-};
 
+// Effects to be called on event objects. 
+// This object should exist on client side as well.
 var effects = {
-	moveRight: function (state) {
-		state.entityDict[this.entityId].position[0] += 10;
+	RIGHT_ARROW: function (state) {
+		state.entityDict[this.entityId].position[1] += 1	;
 	},
-	moveLeft: function (state) {
-		state.entityDict[this.entityId].position[0] -= 10;
-	},
-	test: function (state) {
-		console.log("test effect");
+	LEFT_ARROW: function (state) {
+		state.entityDict[this.entityId].position[1] -= 1;
 	}
 };
 
+// Create the game server.
+var GameServer = require("./game-server.js"),
+	gameServer = new GameServer(io, effects);
 
-// var Event = require("./sync.js").EventFactory(defaultEffects);
-
-
-var GameServer = require("./game-server.js");
-var gameServer = new GameServer(io, effects);
+// Update cycle.
+var infinity = setInterval(function () {
+	gameServer.sendPkg();
+	gameServer.processEvents();
+}, 3000);
 
 
