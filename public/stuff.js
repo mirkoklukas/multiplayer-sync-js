@@ -249,20 +249,19 @@ var Camera = function (config, stage) {
 	var position = config.position;
 	var viewport = config.viewport;
 	var scale = Math.abs(stage.width/(viewport.upperright[0] - viewport.lowerleft[0]));
-
+	// Camera Methods.
 	this.toCanvas = function (worldPos) {
-		var y = stage.height - scale*(worldPos[0] - position[0]),
-			x = scale*(worldPos[1] - position[1]);
+		var y = stage.height - scale*(worldPos[1] - position[1]),
+			x = scale*(worldPos[0] - position[0]);
 		return [x,y];
 	};
 	this.toWorld = function (canvasPos) {
-		var y = ((stage.height - canvasPos[1])/scale) + position[0];
-			x = (canvasPos[0]/scale) + position[1];
-		return [y, x];
+		var y = ((stage.height - canvasPos[1])/scale) + position[1];
+			x = (canvasPos[0]/scale) + position[0];
+		return [x, y];
 	};
-	this.inViewport = function (obj) {
-		// ...		
-	};
+	// TO DO: Replace with something non-trivial.
+	this.isVisible = function (obj) { return true; };
 };
 // =============================================================================
 //  

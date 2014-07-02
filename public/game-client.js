@@ -1,16 +1,14 @@
 
+
 // =============================================================================
 //  The Game Client.
 // =============================================================================
-var GameClient = function(io, effects, eventSource) {
+var Synchronizer = function(io, effects, gameState) {
     // Unique id, assigned by server over network
     this.id = null;
-    this.state = new GameState();
+    this.state = gameState;
     this.lastSequenceNumber = 0;
-    this.eventSource = eventSource;
     this.effects = effects;
-
-    this.avatarId = null;
 
     // Local Events that haven't been approved by the server, or 
     // haven't been injected into the state yet.
@@ -23,55 +21,47 @@ var GameClient = function(io, effects, eventSource) {
     this.initialze();
 };
 
-GameClient.prototype.initialze = function () {
+Synchronizer.prototype.onWelcome = function (welcomePkg) {
+    console.log("Synchronizer.prototyp.onWelcome(...): Not implemented yet...");
+};
+
+Synchronizer.prototype.initialze = function () {
 
     var io = this.io,
         socket = this.socket = io.connect('http://localhost:3000/'),
         that = this;
 
-    socket.on('welcome', bind(this, function (data) {
+    socket.on("welcome", bind(this, function (data) {
         console.log(data.msg);
         this.id = data.id;
+        this.onWelcome(data.connectionPkg);
     }));
 
-    socket.on('server package', function (data) {
+
+    socket.on("server package", function (data) {
         console.log(data.msg);
         that.pkgs.push(data.pkg);
 
     });
 
-    // =======================================================
-    socket.on("new player", function (data) {
+    socket.on("new client", function (data) {
         console.log(data.msg);
     });
 
-    socket.on("player left", function (data) {
+    socket.on("client left", function (data) {
         console.log(data.msg);
     });
-    // =======================================================
-
-    this.eventSource.on("mouseup", bind(this, function (data) {
-        socket.emit("click", {
-            msg: "Client " + this.id +  " clicked",
-            event: update(data, {type: "click"})
-        });  
-    }));
-
-    this.eventSource.onAny(bind(this, function (type, data) {
-        console.log("Event:", type, data)
-        this.fireEvent(type, data);
-    }));
 };
 
-GameClient.prototype.fireEvent = function (type, data) {
-    console.log("GameClient.fireEvent():", type, data)
+
+Synchronizer.prototype.feedEvent = function (type, data) {
+    console.log("SyncStateClient.feedEvent():", type, data);
     // Extend the `data` object with everything needed to synchronize, and
     // create an "event-like" object `e`.
     this.lastSequenceNumber += 1;
     var e = update(data, {
         type: type,
-        sequenceNumber: this.lastSequenceNumber,
-        entityId: this.id
+        sequenceNumber: this.lastSequenceNumber
     });
     this.eventQueue.push(e);
     this.socket.emit("client event", {
@@ -83,7 +73,7 @@ GameClient.prototype.fireEvent = function (type, data) {
 
 };
 
-GameClient.prototype.processServerPkgs =  function () {
+Synchronizer.prototype.processServerPkgs =  function () {
 
     while(true) {
         // A package consists of a list of state updates, and 
@@ -93,8 +83,8 @@ GameClient.prototype.processServerPkgs =  function () {
 
         // Update the game state 
         var that = this;
-        (pkg.entities).forEach(function (entity) {
-            that.state.updateEntity(entity);
+        (pkg.entities).forEach(function (entityData) {
+            that.state.update(entityData);
         });
         // Remove those local events that already have been incorporated
         var len = this.eventQueue.length,
@@ -104,7 +94,7 @@ GameClient.prototype.processServerPkgs =  function () {
     }
 };
 
-GameClient.prototype.processEvents = function () {
+Synchronizer.prototype.processEvents = function () {
     this.eventQueue.forEach(bind(this, function (e) {
         if (!this.effects[e.type]) 
             console.log("GameClient.processEvents(): Unknown effect...");
