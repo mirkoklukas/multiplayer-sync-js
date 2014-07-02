@@ -17,66 +17,67 @@ app.get('/', function(req, res){
 
 
 var entityBlueprints = { 
-    spaceship: ["position", "visual", "dynamicBody"],
-    asteroid: ["position", "visual", "dynamicBody", "explodable"],
-    bullet: ["position", "visual", "dynamicBody"]
+    spaceship: ["position", "visual", "lasercanon"],
+    asteroid: ["position", "visual", "dynamicBody"],
+    bullet: ["position", "dynamicBody"]
 };
 
-var entityComponents = {
-    position: function (obj) {
-        obj.position = [0,0];
-        obj.setPosition = function (position) {
-        	this.position = position;
-        	return this;
-        };
-    },
-    dynamicBody: function (obj) {
-        obj.velocity = [0,0];
-        obj.updates.push(function(delta) {
-            this.position[0] += delta*this.velocity[0];
-            this.position[1] += delta*this.velocity[1];
-        }); 
-    },
-    visual: function (obj) {
-        switch (obj.type) {
-        case 'spaceship':
-            obj.size = [20,10];
-            obj.color = "#000";
-            break;
-        case 'asteroid':    
-            obj.size = [30,30];
-            obj.color = "#f00";
-            break;
-        case 'bullet':
-            obj.size = [3,3];
-            obj.color = "#ff0";
-            break;
+var entityComponents = function (Entity) {
+    return { 
+        position: function (obj) {
+            obj.position = [0,0];
+            obj.setPosition = function (position) {
+            	this.position = position;
+            	return this;
+            };
+        },
+        dynamicBody: function (obj) {
+            obj.velocity = [0,0];
+            obj.updates.push(function(delta) {
+                this.position[0] += delta*this.velocity[0];
+                this.position[1] += delta*this.velocity[1];
+            });
+            obj.setVelocity = function (velocity) {
+                this.velocity = velocity;
+                return this;
+            };
+        },
+        keyboard: function (obj) {
+            // React to input.
+            obj.updates.push(function (delta) {
+                // NOTE: `this` will become the entity where the update function is called on
+                if(this.game.keyboard.pressed("d"))
+                    console.log("d");
+                    // this.game.synchronizer.feedEvent("position update", {});
+    		});
+        },
+        lasercanon: function (obj) {
+            obj.shoot = function () {
+                console.log("SHOOT", this.id);
+                var bullet = new Entity("bullet").setPosition(this.position.slice()).setVelocity([60,0]);
+                this.getGame().gameState.addEntity(bullet);
+            };
         }
-        obj.render = function (renderer) {
-            renderer.drawEntity(this);
-        };
-    },
-    keyboard: function (obj) {
-        // React to input.
-        obj.updates.push(function (delta) {
-            // NOTE: `this` will become the entity where the update function is called on
-            if(this.game.keyboard.pressed("d"))
-                console.log("d");
-                // this.game.synchronizer.feedEvent("position update", {});
-		});
-    }
+    };
 };
 
 var EntityConstructorFactory = function (game, entityBlueprints, entityComponents) { 
-
+    // The game's entity constructor.
     var Entity =  function (type) {
         // this.game = game;
         this.type = type; 
         this.components = []; 
         this.updates = []; 
 
-        // Initialize according to the blueprint of respective type
-        this.addComponent(entityBlueprints[type]);
+        // Initialize.
+        this.init();
+    };
+
+    var entityBlueprints = entityBlueprints,
+        entityComponents = entityComponents(Entity);
+
+    Entity.prototype.init = function () {
+        this.addComponent(entityBlueprints[this.type]);
     };
 
     Entity.prototype.getGame = function () {
@@ -135,8 +136,9 @@ var effects = {
     DOWN_ARROW: function (state) {
         state.entityDict[this.entityId].position[1] -= 1;
     },
-    bullet: function (state) {
-        var velocity = this.velocity;
+    shoot: function (state) {
+        var id = this.entityId;
+        state.entityDict[id].shoot();
     }
 };
 
@@ -175,7 +177,7 @@ Game.prototype.run = function () {
 		that.synchronizer.sendPkg();
 		that.synchronizer.processEvents();
 		that.gameState.entities.forEach(function (entity) {
-			entity.update(0.1);
+			entity.update(0.2);
 		});
 	}, 200);
 };

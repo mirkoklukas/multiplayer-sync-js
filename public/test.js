@@ -26,10 +26,13 @@ var Keyboarder = function() {
       	else 
       		return keyState[keyCode] === true;
     };
-    this.pressed = function (arr) {
-        return arr.filter(function (keyLabel) {
+    this.pressed = function (keyLabel) {
+        if(!(keyLabel instanceof Array)) 
             return keyState[keyCodeByLabel[keyLabel]] === true;
-        });
+        else
+            return keyLabel.filter(function (label) {
+                return keyState[keyCodeByLabel[label]] === true;
+            });
     };
 
     var keyCodeByLabel = { 
@@ -118,7 +121,7 @@ var Keyboarder = function() {
 };
 
 var entityBlueprints = { 
-    spaceship: ["position", "visual"],
+    spaceship: ["position", "visual", "lasercanon"],
     asteroid: ["position", "visual"],
     bullet: ["position", "visual"]
 };
@@ -149,8 +152,8 @@ var entityComponents = {
             obj.color = "#f00";
             break;
         case 'bullet':
-            obj.size = [3,3];
-            obj.color = "#ff0";
+            obj.size = [4,1];
+            obj.color = "#f00";
             break;
         }
         obj.render = function (renderer) {
@@ -165,11 +168,19 @@ var entityComponents = {
 
             if(pressedArrowKeys.length > 0) {
                 pressedArrowKeys.forEach(bind(this, function (key) {
-                    this.game.synchronizer.feedEvent(key, { entityId: this.id });
+                    this.game.synchronizer.feedEvent(key, {entityId: this.id});
                 }));
+            }
+            if(this.game.keyboard.pressed("SPACE")) { 
+                this.game.synchronizer.feedEvent("shoot", {entityId: this.id});
             }
             
         });
+    },
+    lasercanon: function (obj) {
+        obj.shoot = function () {
+            console.log("SHOOT", this.id);
+        };
     }
 };
 
@@ -238,8 +249,7 @@ var effects = {
     DOWN_ARROW: function (state) {
         state.entityDict[this.entityId].position[1] -= 1;
     },
-    bullet: function (state) {
-        var velocity = this.velocity;
+    shoot: function (state) {
     }
 };
 
