@@ -30,7 +30,7 @@ var makeObservable = function (obj) {
 			f.apply(obj, args || null);
 		});
 		
-		(callbacks["any"] || []).map(function (f) {
+		(callbacks["_any"] || []).map(function (f) {
 			f.apply(obj, [type].concat(args) );
 		});
 		return obj;
@@ -44,7 +44,7 @@ var makeObservable = function (obj) {
 	};
 	
 	obj.onAny = function (f) {
-		(callbacks["any"] = callbacks["any"] || []).push(f);
+		(callbacks["_any"] = callbacks["_any"] || []).push(f);
 		return obj;
 	};
 
@@ -263,6 +263,7 @@ var Camera = function (config, stage) {
 	// TO DO: Replace with something non-trivial.
 	this.isVisible = function (obj) { return true; };
 };
+
 // =============================================================================
 //  
 // =============================================================================

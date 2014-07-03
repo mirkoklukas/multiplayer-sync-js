@@ -185,7 +185,7 @@ var entityComponents = {
 };
 
 var EntityConstructorFactory = function (game, entityBlueprints, entityComponents) { 
-
+    
     var Entity =  function (type) {
         this.game = game;
         this.type = type; 
@@ -313,13 +313,6 @@ Game.prototype.run = function () {
         }) );
     }));
 };
-
-
-
-
-
-
-
 
 
 
