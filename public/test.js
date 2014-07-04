@@ -123,7 +123,7 @@ var Keyboarder = function() {
 var entityBlueprints = { 
     spaceship: ["position", "visual", "lasercanon"],
     asteroid: ["position", "visual"],
-    bullet: ["position", "visual"]
+    bullet: ["position", "visual", "dynamicBody"]
 };
 
 var entityComponents = {
@@ -172,6 +172,8 @@ var entityComponents = {
                 }));
             }
             if(this.game.keyboard.pressed("SPACE")) { 
+                
+
                 this.game.synchronizer.feedEvent("shoot", {entityId: this.id});
             }
             
@@ -185,7 +187,7 @@ var entityComponents = {
 };
 
 var EntityConstructorFactory = function (game, entityBlueprints, entityComponents) { 
-    
+
     var Entity =  function (type) {
         this.game = game;
         this.type = type; 
@@ -302,19 +304,21 @@ Game.prototype.run = function () {
     console.log("Game.prototype.run().")
 
 
-
+    var lastTick = 0;
 
     var infinity = new AnimationFrameLoop(bind(this, function () {
+        var now = +new Date();
         this.stage.clear();
         this.synchronizer.processServerPkgs();
+        this.synchronizer.remoteReplay();
         this.gameState.entities.forEach(bind(this, function (entity) {
-            entity.update(1000);
+            // entity.update(+new Date() - lastTick);
+            entity.update(0.2);
             entity.render(this.renderer);
         }) );
+        lastTick = now; 
     }));
 };
-
-
 
 // keyboard.onAny(bind(this, function (type, data) {
 //     console.log("Event:", type, data);

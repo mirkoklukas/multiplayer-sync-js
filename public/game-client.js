@@ -1,4 +1,23 @@
 
+var EventQueue = function () {
+    var events = [];
+    var delay = 0;
+    this.setDelay = function (delta) {
+        delay = delta;
+        return this;
+    };
+    this.push = function (e) {
+        e.time = e.time || +new Date();
+        return events.push(e);
+    };
+    this.shift = function () {
+        if (events[0] !== undefined && events[0].time <= +new Date() - delay) return events.shift();
+        else return undefined; 
+    };
+    this.getEvents = function () {
+        return events;
+    }
+};
 
 // =============================================================================
 //  The Game Client.
@@ -10,9 +29,11 @@ var Synchronizer = function(io, effects, gameState) {
     this.lastSequenceNumber = 0;
     this.effects = effects;
 
+
     // Local Events that haven't been approved by the server, or 
     // haven't been injected into the state yet.
     this.eventQueue = [];
+    this.remoteReplayQueue = new EventQueue();
 
     // Network connection.
     this.pkgs = [];
@@ -50,6 +71,7 @@ Synchronizer.prototype.initialze = function () {
 
     socket.on("client left", function (data) {
         console.log(data.msg);
+        
     });
 };
 
@@ -86,6 +108,15 @@ Synchronizer.prototype.processServerPkgs =  function () {
         (pkg.entities).forEach(function (entityData) {
             that.state.update(entityData);
         });
+        // Update replay queue
+        var now = +new Date();
+        (pkg.replayEvents).forEach(function (e) {
+            if(e.clientId !== that.id) { 
+                e.time = e.time - pkg.time + now;
+                that.remoteReplayQueue.push(e);
+            }
+        }) 
+
         // Remove those local events that already have been incorporated
         var len = this.eventQueue.length,
         diff = this.lastSequenceNumber - pkg.lastSequenceNumber[this.id];
@@ -102,5 +133,18 @@ Synchronizer.prototype.processEvents = function () {
             this.effects[e.type].call(e, this.state);
     }));
 };
+
+Synchronizer.prototype.remoteReplay = function () {
+    while (true) {
+        var e = this.remoteReplayQueue.shift();
+        if(!e) break;
+
+        if (!this.effects[e.type]) 
+            console.log("GameClient.processEvents(): Unknown effect...");
+        else
+            this.effects[e.type].call(e, this.state);
+    }
+};
+
 
 

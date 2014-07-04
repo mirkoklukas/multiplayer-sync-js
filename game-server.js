@@ -28,11 +28,37 @@ var update = function (obj, changes) {
 
 var GameState = require("./game-state.js");
 
-var Synchronizer = function (io, effects, gameState) {
+
+var EventQueue = function () {
+	var events = [];
+	var delay = 0;
+	this.setDelay = function (delta) {
+		delay = delta;
+		return this;
+	};
+	this.getDelay = function () {
+		return delay;
+	};
+	this.push = function (e) {
+		e.time = e.time || +new Date();
+		return events.push(e);
+	};
+	this.shift = function () {
+		if (events[0] !== undefined && events[0].time <= +new Date() - delay) return events.shift();
+		else return undefined; 
+	};
+	this.getEvents = function () {
+		return events;
+	}
+};
+
+
+var Synchronizer = function (io, effects, gameState, delay) {
+
     this.state = gameState;
 	this.lastSequenceNumber = {}
 	this.effects = effects;
-	this.eventQueue = [];
+	this.eventQueue = new EventQueue().setDelay(delay);
 	this.io = io;
 	this.initialize();
 };
@@ -70,7 +96,7 @@ Synchronizer.prototype.initialize = function () {
 		socket.on('client event', function (data) {
 			console.log("Client event received", data.event);
 			var e = data.event;
-			update(e, { 
+			update(e, {
 				clientId: socket.id
 			});
 			that.eventQueue.push(e);
@@ -91,7 +117,9 @@ Synchronizer.prototype.sendPkg = function () {
 	// Create and fill the package, 
 	// and clear the list of processed events.
 	var pkg = {
+		time: +new Date() - this.eventQueue.getDelay(),
 		entities: this.state.entities,
+		replayEvents: this.eventQueue.getEvents(),
 		lastSequenceNumber: this.lastSequenceNumber
 	};
 	// Eventually send out the package.
@@ -106,7 +134,7 @@ Synchronizer.prototype.validateEvent = function (e) {
 	return true;
 };
 
-Synchronizer.prototype.processEvents = function () {
+Synchronizer.prototype.processEvents = function (time) {
 	while(true) {
 		var e = this.eventQueue.shift();
 		if(!e) break;

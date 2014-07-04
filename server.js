@@ -147,9 +147,12 @@ var effects = {
 var Game = function () {
     
     var Synchronizer = require("./game-server.js"),
-	    Entity = EntityConstructorFactory(this, entityBlueprints, entityComponents),
-	    GameState = require("./game-state.js")(Entity);
-	
+        Entity = EntityConstructorFactory(this, entityBlueprints, entityComponents),
+        GameState = require("./game-state.js")(Entity);
+    
+    // Congig.
+    this.intervalLength = 3000;
+
     // Level.
     this.map = {};
     this.gameState = new GameState();
@@ -158,7 +161,7 @@ var Game = function () {
     // ...
 
     // Set up synchronization.
-    this.synchronizer = new Synchronizer(io, effects, this.gameState);
+    this.synchronizer = new Synchronizer(io, effects, this.gameState, this.intervalLength);
     var that = this;
 	this.synchronizer.onConnection = function () {
 		var spaceship = new Entity("spaceship").setPosition([Math.random()*100, Math.random()*100]),
@@ -174,12 +177,12 @@ Game.prototype.run = function () {
 	var that = this;
 	var infinity = setInterval(function () {
 		console.log("Tick...");
+        that.synchronizer.processEvents();
 		that.synchronizer.sendPkg();
-		that.synchronizer.processEvents();
 		that.gameState.entities.forEach(function (entity) {
 			entity.update(0.2);
 		});
-	}, 200);
+	}, that.intervalLength);
 };
 
 var game = new Game();
