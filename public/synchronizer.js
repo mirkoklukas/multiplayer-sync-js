@@ -2,7 +2,13 @@
 //  The Game Client.
 // =============================================================================
 
-define(["shared/eventQueue"], function (EventQueue) { 
+define(["eventQueue"], function (EventQueue) { 
+
+    var bind = function(that, f) {
+        return function() {
+            return f.apply(that, arguments);
+        }
+    };
 
     var Synchronizer = function(io, effects, gameState) {
         // Unique id, assigned by server over network

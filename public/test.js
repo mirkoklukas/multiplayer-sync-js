@@ -144,21 +144,27 @@ var entityComponents = {
     visual: function (obj) {
         switch (obj.type) {
         case 'spaceship':
-            obj.size = [20,10];
+            obj.size = [30,20];
             obj.color = "#000";
+            obj.render = function (renderer) {
+                renderer.drawSpaceship(this);
+            };
             break;
         case 'asteroid':    
             obj.size = [30,30];
             obj.color = "#f00";
+            obj.render = function (renderer) {
+                renderer.drawEntity(this);
+            };
             break;
         case 'bullet':
             obj.size = [4,1];
             obj.color = "#f00";
+            obj.render = function (renderer) {
+                renderer.drawEntity(this);
+            };
             break;
         }
-        obj.render = function (renderer) {
-            renderer.drawEntity(this);
-        };
     },
     keyboard: function (obj) {
         // React to input.
@@ -173,7 +179,6 @@ var entityComponents = {
             }
             if(this.game.keyboard.pressed("SPACE")) { 
                 
-
                 this.game.synchronizer.feedEvent("shoot", {entityId: this.id});
             }
             
@@ -300,23 +305,28 @@ Game.prototype.update = function (delta) {
     });
 };
 
+
 Game.prototype.run = function () {
     console.log("Game.prototype.run().")
 
+    var now = +new Date(),
+        lastTick = now;
 
-    var lastTick = 0;
 
-    var infinity = new AnimationFrameLoop(bind(this, function () {
-        var now = +new Date();
-        this.stage.clear();
+
+    accurateSetIntervall(20, bind(this, function (delta) {
         this.synchronizer.processServerPkgs();
         this.synchronizer.remoteReplay();
+        this.gameState.entities.forEach(function (entity) {
+            entity.update(delta);
+        });
+    }));
+
+    var infinity = new AnimationFrameLoop(bind(this, function () {
+        this.stage.clear();
         this.gameState.entities.forEach(bind(this, function (entity) {
-            // entity.update(+new Date() - lastTick);
-            entity.update(0.2);
             entity.render(this.renderer);
-        }) );
-        lastTick = now; 
+        }));
     }));
 };
 

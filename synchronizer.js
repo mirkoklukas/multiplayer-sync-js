@@ -1,60 +1,12 @@
 // =============================================================================
-// 	Helper
-// =============================================================================
-var bind = function(that, f) {
-	return function() {
-    	return f.apply(that, arguments);
-  	}
-};
-
-var update = function (obj, changes) {
-	for (key in changes) {
-		if (typeof obj[key] !== "object")
-			obj[key] = changes[key]
-		else
-			update(obj[key], changes[key]);
-	}
-  return obj;
-};
-
-// =============================================================================
-//  
+//  Server-side Synchronizer.
 // =============================================================================
 
+// Import stuff.
+var EventQueue = require("./shared/eventQueue.js")
 
-// =============================================================================
-//  The Game Server.
-// =============================================================================
-
-var GameState = require("./game-state.js");
-
-
-var EventQueue = function () {
-	var events = [];
-	var delay = 0;
-	this.setDelay = function (delta) {
-		delay = delta;
-		return this;
-	};
-	this.getDelay = function () {
-		return delay;
-	};
-	this.push = function (e) {
-		e.time = e.time || +new Date();
-		return events.push(e);
-	};
-	this.shift = function () {
-		if (events[0] !== undefined && events[0].time <= +new Date() - delay) return events.shift();
-		else return undefined; 
-	};
-	this.getEvents = function () {
-		return events;
-	}
-};
-
-
+// Our Synchronizer module.
 var Synchronizer = function (io, effects, gameState, delay) {
-
     this.state = gameState;
 	this.lastSequenceNumber = {}
 	this.effects = effects;
@@ -90,21 +42,16 @@ Synchronizer.prototype.initialize = function () {
 			'id': socket.id
 		});
 
-
-
 		// Something happend at the other side of the tube.
 		socket.on('client event', function (data) {
 			console.log("Client event received", data.event);
-			var e = data.event;
-			update(e, {
-				clientId: socket.id
-			});
-			that.eventQueue.push(e);
+			data.event.clientId = socket.id
+			that.eventQueue.push(data.event);
 	    });
 
 		// Good bye and fare well.
 		socket.on('disconnect', function () {
-
+			console.log("Disconnected:", socket.id);
 			socket.broadcast.emit('client left', { 
 				msg: socket.id + " left...",
 				id: socket.id

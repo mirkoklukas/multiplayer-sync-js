@@ -4,7 +4,13 @@
 // 	to create entities...
 // =============================================================================
 
-var GameStateConstructorFactory = function (Entity) { 
+// 	The RequireJS optimizer, as of version 1.0.3, will strip out the use of 'amdefine' below, 
+// 	so it is safe to use this module for your web-based projects too.
+if (typeof define !== 'function') { var define = require('amdefine')(module); }
+
+// 	Define the module. Do not pass an module name (as this only works in the browser)
+// 	If no dependencies are handed to define they will be set to ['require', 'exports', 'module'].
+define(["./entity.js", "uuid"], function (Entity, uuid) {
 
 	var GameState = function () {
 		this.entities = [];
@@ -46,15 +52,14 @@ var GameStateConstructorFactory = function (Entity) {
 		delete data.components;
 
 		if (!this.entityDict[id]) 
-			this.addEntity(new Entity(data.type).addDiff(data));
+			this.addEntity(new Entity(data.type).patch(data));
 		else 
-			this.entityDict[id].addDiff(data);
+			this.entityDict[id].patch(data);
 
 		return this;
 	};
 
 	return GameState;
 
-};
+});
 
-// exports.GameState = GameState;
