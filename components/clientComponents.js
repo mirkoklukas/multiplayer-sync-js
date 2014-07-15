@@ -4,6 +4,8 @@
 
 define(["entity"], function (Entity) {
 
+
+
 	// The client components.
 	var clientComponents = { 
 	    position: function (obj) {
@@ -24,13 +26,29 @@ define(["entity"], function (Entity) {
 	            return this;
 	        };
 	    },
+	    visual: function (obj) {
+	    	switch (obj.type) {
+	    	case "spaceship":
+	    		obj.size = [10,10];
+	    		obj.color = "#000";
+	    		break;
+	    	case "bullet":
+	    		obj.size = [5,5];
+	    		obj.color = "#f00";
+	    		break;
+	    	}
+	    	obj.render = function (renderer) {
+	    		console.log("123");
+	    		renderer.drawEntity(this);
+	    	};
+	    },
 	    keyboard: function (obj) {
 	        // React to input.
 	        obj.updates.push(function (delta) {
 	            // NOTE: `this` will become the entity where the update function is called on
-	            if(this.game.keyboard.pressed("d"))
+	            if(this.getGame().keyboard.pressed("d"))
 	                console.log("d");
-	                // this.game.synchronizer.feedEvent("position update", {});
+	                // this.getGame().synchronizer.feedEvent("position update", {});
 			});
 	    },
 	    lasercanon: function (obj) {

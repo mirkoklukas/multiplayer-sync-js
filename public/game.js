@@ -6,10 +6,11 @@
 
 
 
-define( ["entity", "gameState", "synchronizer", "comp/clientBlueprints", "comp/clientComponents", "stuff", "socket.io/socket.io"], 
-function (Entity, GameState, Synchronizer, blueprints, components, stuff, io) {
-	console.log(stuff)
-	var accurateSetInterval = stuff.accurateSetInterval;
+define( ["entity", "gameState", "synchronizer", "comp/clientBlueprints", "comp/clientComponents", "stuff", "accurateSetinterval", "socket.io/socket.io"], 
+function (Entity, GameState, Synchronizer, blueprints, components, stuff, accurateSetinterval, io) {
+
+	// TODO: Define own modules for the objects below...
+	var AnimationFrameLoop = stuff.AnimationFrameLoop;
 	var Keyboarder = stuff.Keyboarder;
 	var Camera = stuff.Camera;
 	var Stage = stuff.Stage;
@@ -46,6 +47,7 @@ function (Entity, GameState, Synchronizer, blueprints, components, stuff, io) {
 	    // Instanciate.
 	    this.gameState = new GameState();
 	    this.synchronizer = new Synchronizer(io, effects, this.gameState);
+
 	    this.keyboard = new Keyboarder();
 	    this.stage = new Stage("canvas-container");
 	    this.camera = new Camera({ 
@@ -85,13 +87,13 @@ function (Entity, GameState, Synchronizer, blueprints, components, stuff, io) {
 	    var now = +new Date(),
 	        lastTick = now;
 
-	    accurateSetInterval(20, bind(this, function (delta) {
+	    accurateSetinterval(bind(this, function (delta) {
 	        this.synchronizer.processServerPkgs();
 	        this.synchronizer.remoteReplay();
 	        this.gameState.entities.forEach(function (entity) {
 	            entity.update(delta);
 	        });
-	    }));
+	    }), 20);
 
 	    var infinity = new AnimationFrameLoop(bind(this, function () {
 	        this.stage.clear();

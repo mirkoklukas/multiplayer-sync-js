@@ -39,7 +39,7 @@ var effects = {
 
 // Create the game server.
 
-var accurateSetIntervall = require("./accurate-timer.js")
+var accurateSetintervall = require("./shared/accurateSetinterval.js")
 
 var Game = function () {
     
@@ -80,17 +80,17 @@ Game.prototype.run = function () {
 	var that = this;
 
 
-    accurateSetIntervall(20, function (delta) {
+    accurateSetintervall(function (delta) {
         that.gameState.entities.forEach(function (entity) {
             entity.update(delta);
         });
         that.synchronizer.processEvents();
-    });
+    }, 20);
 
-    accurateSetIntervall(this.intervalLength, function (delta) {
+    accurateSetintervall(function (delta) {
 		console.log("Send Package...");
 		that.synchronizer.sendPkg();
-	});
+	}, this.intervalLengthc);
 };
 
 Game.prototype.colliding = function (b1, b2) {

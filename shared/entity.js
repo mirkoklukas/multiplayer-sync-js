@@ -19,7 +19,6 @@ define(function (require) {
     // The entity.
     //  =============================================================================
     var Entity =  function (type) {
-        this.game = game;
         this.type = type; 
         this.components = []; 
         this.updates = []; 
@@ -58,6 +57,10 @@ define(function (require) {
 
     // Define the prototype
     //  =============================================================================
+    Entity.prototype.getGame = function () {
+        return game;
+    };
+
     Entity.prototype.setId = function (id) {
         this.id = id;
         return this;
@@ -68,7 +71,11 @@ define(function (require) {
         this.updates.forEach(function (update) {
             update.call(that, delta);
         });
+        return this;
+    };
 
+    Entity.prototype.render = function (id) {
+        console.log("Not implemented yet...");
         return this;
     };
 
