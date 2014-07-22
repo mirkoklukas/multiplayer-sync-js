@@ -76,9 +76,9 @@ var Game = function () {
 
 
 Game.prototype.run = function () {
-	// Update cycle.
+	
+    // Update cycle.
 	var that = this;
-
 
     accurateSetintervall(function (delta) {
         that.gameState.entities.forEach(function (entity) {
@@ -88,9 +88,10 @@ Game.prototype.run = function () {
     }, 20);
 
     accurateSetintervall(function (delta) {
-		console.log("Send Package...");
+		// console.log("Send Package...");
 		that.synchronizer.sendPkg();
-	}, this.intervalLengthc);
+	}, this.intervalLength);
+
 };
 
 Game.prototype.colliding = function (b1, b2) {

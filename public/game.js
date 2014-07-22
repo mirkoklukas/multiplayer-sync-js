@@ -2,11 +2,7 @@
 //  The Game object.
 // 	=============================================================================
 
-
-
-
-
-define( ["entity", "gameState", "synchronizer", "comp/clientBlueprints", "comp/clientComponents", "stuff", "accurateSetinterval", "socket.io/socket.io"], 
+define( ["./entity.js", "gameState", "synchronizer", "comp/clientBlueprints", "comp/clientComponents", "stuff", "accurateSetinterval", "socket.io/socket.io"], 
 function (Entity, GameState, Synchronizer, blueprints, components, stuff, accurateSetinterval, io) {
 
 	// TODO: Define own modules for the objects below...
@@ -44,8 +40,13 @@ function (Entity, GameState, Synchronizer, blueprints, components, stuff, accura
 		// Tell the entities which game the populate.
 	    Entity.setGame(this).setBlueprints(blueprints).setComponents(components);
 
+
 	    // Instanciate.
 	    this.gameState = new GameState();
+
+
+
+
 	    this.synchronizer = new Synchronizer(io, effects, this.gameState);
 
 	    this.keyboard = new Keyboarder();
@@ -93,6 +94,7 @@ function (Entity, GameState, Synchronizer, blueprints, components, stuff, accura
 	        this.gameState.entities.forEach(function (entity) {
 	            entity.update(delta);
 	        });
+
 	    }), 20);
 
 	    var infinity = new AnimationFrameLoop(bind(this, function () {

@@ -15,6 +15,7 @@ define(["./entity.js", "uuid"], function (Entity, uuid) {
 	var GameState = function () {
 		this.entities = [];
 		this.entityDict = {};
+
 	};	
 
 	GameState.prototype.addEntity = function (entity) {
@@ -43,7 +44,6 @@ define(["./entity.js", "uuid"], function (Entity, uuid) {
 
 	GameState.prototype.update = function (data) {
 		var id = data.id;
-
 		// Creating a new entity fills its updates array, we dont want to 
 		// replace that by the received array, which contains only 
 		// `null` values anyway (since it comes via the socket connection, 
@@ -51,11 +51,12 @@ define(["./entity.js", "uuid"], function (Entity, uuid) {
 		delete data.updates;
 		delete data.components;
 
-		if (!this.entityDict[id]) 
+		if (!this.entityDict[id]) { 
 			this.addEntity(new Entity(data.type).patch(data));
-		else 
+		} else { 
 			this.entityDict[id].patch(data);
-
+		}
+		
 		return this;
 	};
 

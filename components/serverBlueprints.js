@@ -2,11 +2,11 @@
 // 	Entity blueprints for the server.
 // 	=============================================================================
 
-var clientBlueprints = { 
-    spaceship: ["position", "visual", "lasercanon"],
-    asteroid: ["position", "visual", "dynamicBody"],
+var serverBlueprints = { 
+    spaceship: ["position", "lasercanon"],
+    asteroid: ["position", "dynamicBody"],
     bullet: ["position", "dynamicBody"]
 };
 
-module.exports = clientBlueprints;
+module.exports = serverBlueprints;
 

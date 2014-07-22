@@ -36,9 +36,13 @@ define(["entity"], function (Entity) {
 	    		obj.size = [5,5];
 	    		obj.color = "#f00";
 	    		break;
+			default:
+	    		obj.size = [20,20];
+	    		obj.color = "#f00";
+	    		break;
 	    	}
 	    	obj.render = function (renderer) {
-	    		console.log("123");
+
 	    		renderer.drawEntity(this);
 	    	};
 	    },
@@ -46,9 +50,16 @@ define(["entity"], function (Entity) {
 	        // React to input.
 	        obj.updates.push(function (delta) {
 	            // NOTE: `this` will become the entity where the update function is called on
-	            if(this.getGame().keyboard.pressed("d"))
-	                console.log("d");
-	                // this.getGame().synchronizer.feedEvent("position update", {});
+	            var arrowKeys = this.getGame().keyboard.pressed(['LEFT_ARROW', 'UP_ARROW', 'RIGHT_ARROW', 'DOWN_ARROW']),
+	            	id = this.id,
+	            	that = this;
+	            if(arrowKeys.length > -1) {
+
+	            	arrowKeys.forEach(function (label) {
+	                	that.getGame().synchronizer.feedEvent(label, { entityId : id});
+	            	});
+	            }
+	                // console.log("D");
 			});
 	    },
 	    lasercanon: function (obj) {

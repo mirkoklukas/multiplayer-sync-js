@@ -219,6 +219,7 @@
 	      	else 
 	      		return keyState[keyCode] === true;
 	    };
+	    
 	    this.pressed = function (keyLabel) {
 	        if(!(keyLabel instanceof Array)) 
 	            return keyState[keyCodeByLabel[keyLabel]] === true;

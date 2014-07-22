@@ -19,6 +19,8 @@ define(function (require) {
     // The entity.
     //  =============================================================================
     var Entity =  function (type) {
+
+        console.log("new Entity()", type);
         this.type = type; 
         this.components = []; 
         this.updates = []; 
@@ -40,6 +42,10 @@ define(function (require) {
         return this;
     };
 
+    Entity.getBlueprints = function () {
+        return entityBlueprints;
+    };
+
     Entity.defineBlueprint = function (type, components) {
         entityBlueprints[type] = components;
         return this;
@@ -48,6 +54,10 @@ define(function (require) {
     Entity.setComponents = function (components) {
         entityComponents = components;
         return this;
+    };
+
+    Entity.getComponents = function () {
+        return entityComponents;
     };
 
     Entity.defineComponent = function (type, makerFunktion) {
@@ -75,7 +85,7 @@ define(function (require) {
     };
 
     Entity.prototype.render = function (id) {
-        console.log("Not implemented yet...");
+        console.log("Entity.prototype.render(): Not implemented yet...");
         return this;
     };
 

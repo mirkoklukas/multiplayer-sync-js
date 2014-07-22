@@ -5,9 +5,9 @@
 define(function () {
 
 	var clientBlueprints = { 
-	    spaceship: ["position", "visual", "lasercanon"],
-	    asteroid: ["position", "visual", "dynamicBody"],
-	    bullet: ["position", "visual", "dynamicBody"]
+	    spaceship: ["position", "visual"],
+	    asteroid: ["position", "visual"],
+	    bullet: ["position", "visual"]
 	};
 
 	return clientBlueprints;

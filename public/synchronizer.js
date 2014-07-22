@@ -48,7 +48,7 @@ define(["eventQueue"], function (EventQueue) {
 
 
         socket.on("server package", function (data) {
-            console.log(data.msg);
+            // console.log(data.msg);
             that.pkgs.push(data.pkg);
 
         });
@@ -66,13 +66,15 @@ define(["eventQueue"], function (EventQueue) {
 
     Synchronizer.prototype.feedEvent = function (type, data) {
         console.log("SyncStateClient.feedEvent():", type, data);
+        
         // Extend the `data` object with everything needed to synchronize, and
         // create an "event-like" object `e`.
         this.lastSequenceNumber += 1;
-        var e = update(data, {
-            type: type,
-            sequenceNumber: this.lastSequenceNumber
-        });
+        
+        var e = data;
+        e.type = type;
+        e.sequenceNumber = this.lastSequenceNumber;
+
         this.events.push(e);
         this.socket.emit("client event", {
             "event": e

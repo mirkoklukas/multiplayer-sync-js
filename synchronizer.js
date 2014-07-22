@@ -8,7 +8,7 @@ var EventQueue = require("./shared/eventQueue.js")
 // Our Synchronizer module.
 var Synchronizer = function (io, effects, gameState, delay) {
     this.state = gameState;
-	this.lastSequenceNumber = {}
+	this.lastSequenceNumber = {};
 	this.effects = effects;
 	this.eventQueue = new EventQueue().setDelay(delay);
 	this.io = io;

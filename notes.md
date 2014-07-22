@@ -10,3 +10,13 @@
  - synchronize the update cycles on server and client side. I.e. the update intervall should be of the same duration.
 
 
+
+## Literature
+
+- Bob Nystrom, Game programming patterns, www.gameprogrammingpatterns.com
+
+
+## Notes on Require-JS:
+ 
+- Say one wants to make use of the fact that "loading" a module only creates **one** copy of it, then one needs to reference to it by the exact same name in the dependency list, i.e.: define/require(["module"]) and define/require(["./module.js"]) will create two different representatives of the module.
+
