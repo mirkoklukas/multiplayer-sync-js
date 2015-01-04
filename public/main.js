@@ -6,17 +6,11 @@
 requirejs.config({
     baseUrl: '/',
     paths: {
-        // shared: '../shared',
         comp: '..'
     },
     shim: {
     	'socket.io/socket.io': { exports: 'io' },
         'stuff' : { exports: 'stuff'}
-        // 'keyboarder': { exports: 'Keyboarder' },
-        // 'stage': { exports: 'Stage' },
-        // 'camera': { exports: 'Camera' },
-        // 'renderer': { exports: 'Renderer' },
-        // 'accurateSetInterval': { exports: 'accurateSetInterval'} 
     }
 });
 

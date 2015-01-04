@@ -4,8 +4,6 @@
 
 define(["entity"], function (Entity) {
 
-
-
 	// The client components.
 	var clientComponents = { 
 	    position: function (obj) {

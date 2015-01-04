@@ -1,5 +1,5 @@
 // 	=============================================================================
-//  The Game object.
+//  The Game object for the client.
 // 	=============================================================================
 
 define( ["./entity.js", "gameState", "synchronizer", "comp/clientBlueprints", "comp/clientComponents", "stuff", "accurateSetinterval", "socket.io/socket.io"], 
